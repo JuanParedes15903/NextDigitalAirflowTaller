@@ -37,6 +37,9 @@ import logging
 import requests
 from airflow.sdk import dag, task
 from pendulum import datetime, duration
+from airflow.models import BaseOperator
+from airflow.utils.context import Context
+from airflow.utils.email import send_email
 
 # --------------- #
 # DAG Constants   #
@@ -79,7 +82,10 @@ log = logging.getLogger(__name__)
     tags=["ejercicio", "educativo", "peliculas"],
     is_paused_upon_creation=True,  # El DAG se crea pausado; hay que activarlo manualmente en la UI
     catchup=False,  # No ejecuta runs pasados; solo programa desde ahora en adelante
+    max_active_tasks_per_dag = 16,
+    max_dagruns_to_create_per_loop = 10,
 )
+
 def exercise_movie_pipeline():
     """Pipeline de películas para completar"""
 
@@ -167,7 +173,6 @@ def exercise_movie_pipeline():
         avg_rating = sum(item.get("rating_imdb") for item in movies) / len(movies)
         log.info("Media de nota: %s", str(avg_rating))
         pass
-
     # --- Dependencias ---
     # Con TaskFlow API (@task), las dependencias se crean automáticamente
     # al pasar el return de una tarea como parámetro de la siguiente.
